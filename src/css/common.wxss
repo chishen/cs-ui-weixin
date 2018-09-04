@@ -1,0 +1,23 @@
+.vm {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.mlmr {
+  margin-left: auto;
+  margin-right: auto;
+}
+.type {
+  padding-bottom: 80px;
+}
+h1 {
+  font-size: 30px;
+  font-weight: normal;
+  margin-bottom: 20px;
+  margin-top: 8px;
+}
+p {
+  color: #314659;
+  font-size: 14px;
+}
