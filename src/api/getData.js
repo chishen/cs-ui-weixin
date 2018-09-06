@@ -61,3 +61,8 @@ export const deleteApi = (data, headers) => axios('/api/weixin/deleteApi', data,
  * 删除Component
  */
 export const deleteComponent = (data, headers) => axios('/api/weixin/deleteComponent', data, 'POST', headers)
+
+/**
+ * 删除效果图
+ */
+export const deleteImage = (data, headers) => axios('/api/weixin/deleteImage', data, 'POST', headers)

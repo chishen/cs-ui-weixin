@@ -4,6 +4,34 @@
       <div><h1>{{componentName}} {{componentCnName}}</h1><p v-text="componentDes"></p></div>
       <el-button class="customButton" type="primary" @click="isDemo = !isDemo" v-text="isDemo?'查看组件源码':'查看示例代码'"></el-button>
     </div>
+    <div style="padding-bottom: 40px;">
+      <h2 v-if="!(!isLogin && !fileList.length)" class="title">效果图</h2>
+      <div v-if="!isLogin" class="rendering">
+        <ul>
+          <li v-for="(item, index) in fileList" :key="index">
+            <img :src="item.url">
+            <p v-text="item.name"></p>
+          </li>
+        </ul>
+      </div>
+      <el-upload
+        v-if="isLogin"
+        action="/api/weixin/uploadImage"
+        list-type="picture-card"
+        :file-list="fileList"
+        :on-preview="handlePictureCardPreview"
+        :data="{componentId: componentId}"
+        :on-success="handleSuccess"
+        :on-remove="handleRemove">
+        <i class="el-icon-plus"></i>
+      </el-upload>
+      <el-dialog
+        v-if="isLogin"
+        :visible.sync="dialogVisible">
+        <img width="100%" :src="dialogImageUrl" alt="">
+        <p v-text="dialogImageName" style="text-align: center;"></p>
+      </el-dialog>
+    </div>
     <div v-if="isDemo">
       <h2 class="title">使用指南</h2>
       <div v-for="(x, index) in codeDemoList" :key="index">
@@ -30,7 +58,7 @@
         <codemirror v-model="x.code" :options="x.option"></codemirror>
       </div>
     </div>
-    <div class="type" style="padding-bottom: 24px;padding-top: 80px;"><h1>API</h1></div>
+    <div class="type" style="padding-bottom: 24px;padding-top: 80px;"><h1 v-if="!(!isLogin && !dataSource.attr.length && !dataSource.event.length)">API</h1></div>
     <cs-api v-if="dataSource.attr.length || isLogin" :isLogin="isLogin" :name="componentName" type="attr"
     :deleteApiDialog="deleteApiDialog" :saveApiDialog="saveApiDialog"
     @hideDeleteApiDialog="hideDeleteApiDialog" @showDeleteApiDialog="showDeleteApiDialog"
@@ -61,7 +89,7 @@
 <script>
 import { codemirror } from 'vue-codemirror'
 import '../plugins/codemirror.js'
-import { getDetail, getApi, postEditCode, saveApi, deleteApi, deleteComponent } from '@/api/getData'
+import { getDetail, getApi, postEditCode, saveApi, deleteApi, deleteComponent, deleteImage } from '@/api/getData'
 export default {
   name: 'Loading',
   components: {
@@ -76,6 +104,10 @@ export default {
   },
   data () {
     return {
+      fileList: [],
+      dialogImageUrl: '',
+      dialogImageName: '',
+      dialogVisible: false,
       deleteComponentDialog: false, // 删除Component弹窗初始化隐藏
       currentApiItem: {}, // 当前编辑的Api详情
       currentApiIndex: '', // 当前编辑的Api索引
@@ -120,12 +152,66 @@ export default {
     }
   },
   methods: {
+    filter (str) {
+      if (str == null || str === '') {
+        return []
+      } else {
+        let strArr = str.split(',')
+        let list = []
+        for (let i = 0; i < strArr.length; i++) {
+          if (strArr[i]) {
+            list.push({
+              name: strArr[i].substr(strArr[i].lastIndexOf('/') + 1),
+              url: strArr[i]
+            })
+          }
+        }
+        return list
+      }
+    },
+    handleSuccess (res) {
+      let list
+      if (res.code === '0000') {
+        list = res.list
+        this.fileList = this.filter(list)
+        this.$message({
+          message: '图片上传成功',
+          type: 'success'
+        })
+      } else {
+        this.$message.error(res.msg)
+      }
+    },
+    async handleRemove (file, fileList) {
+      let data = {
+        componentId: this.componentId,
+        name: file.name
+      }
+      let res = await deleteImage(data, this.headers)
+      let list
+      if (res.data.code === '0000') {
+        list = res.data.list
+        this.fileList = this.filter(list)
+        this.$message({
+          message: '图片删除成功',
+          type: 'success'
+        })
+      } else {
+        this.$message.error(res.msg)
+      }
+    },
+    handlePictureCardPreview (file) {
+      this.dialogImageUrl = file.url
+      this.dialogImageName = file.name
+      this.dialogVisible = true
+    },
     async getData (data) {
       const res = await getDetail(data)
       let item = res.data[0]
       let id = item.id
       this.componentCnName = item.cn_name
       this.componentDes = item.des
+      this.fileList = this.filter(item.images)
       let option = {
         readOnly: true,
         // indentUnit: 4,
@@ -400,6 +486,23 @@ export default {
 </script>
 <style lang="less" scoped rel="stylesheet/less">
 @import "../css/common.less";
+.rendering{
+
+}
+.rendering li{
+  display: inline-block;
+  width: 230px;
+}
+.rendering li img{
+  width: 220px;
+  height: 476px;
+  border-radius: 6px;
+}
+.rendering li p{
+  text-align: center;
+  width: 220px;
+  padding-bottom: 20px;
+}
 .type{
   display: flex;
   justify-content: space-between;
