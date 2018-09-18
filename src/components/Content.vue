@@ -142,12 +142,13 @@ export default {
   watch: {
     '$route' (to, from) {
       // 对路由变化作出响应...
-      let type = this.$route.params.type
-      let name = this.$route.params.name
+      let type = to.params.type
+      let name = to.params.name
       let data = {
         type,
         name
       }
+      this.componentName = name
       this.getApi(data)
     }
   },
